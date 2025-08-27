@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inclusive Reader – Pink/White</title>
+  <style>
+    :root{
+      --bg: #fff7fb;         /* light pink background */
+      --card: #ffffff;       /* white surfaces */
+      --ink: #101114;        /* text */
+      --muted: #7a7f87;      /* secondary text */
+      --brand: #ff5fa2;      /* pink accent */
+      --border: #f3d7e5;     /* subtle pink border */
+      --focus: #ffc5dd;      /* focus ring */
+      --contentWidth: 72ch;  /* readable line length */
+      --fontSize: 18px;      /* adjustable */
+      --lineHeight: 1.6;     /* adjustable */
+      --letterSpacing: 0.04em; /* adjustable */
+    }
+
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    /* Header */
+    header{ position:sticky; top:0; z-index:10; backdrop-filter: blur(6px);
+      background: color-mix(in oklab, var(--bg) 85%, white);
+      border-bottom:1px solid var(--border); padding:12px 16px; display:flex; gap:12px; align-items:center; }
+    header h1{ font-size:18px; font-weight:700; letter-spacing:.2px; margin:0; }
+    header .hint{ font-size:12px; color:var(--muted); }
+
+    /* Layout */
+    .wrap{ display:grid; grid-template-columns:320px 1fr; gap:16px; padding:16px; }
+    @media (max-width: 900px){ .wrap{ grid-template-columns:1fr; } }
+
+    /* Cards / Controls */
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; }
+    .card h2{ margin:0 0 10px 0; font-size:16px; }
+    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .muted{ color:var(--muted); font-size:12px; }
+    label{ font-size:14px; }
+
+    input[type="text"], textarea, select{
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; font:inherit;
+    }
+    textarea{ min-height:140px; resize:vertical; }
+
+    button{
+      border:1px solid var(--border); background:#fff; color:var(--ink);
+      padding:8px 12px; border-radius:999px; cursor:pointer; font:inherit;
+    }
+    button.primary{ background: color-mix(in oklab, var(--brand) 12%, #fff); border-color: color-mix(in oklab, var(--brand) 40%, var(--border)); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+
+    .controls .group{ margin-bottom:14px; }
+
+    /* Reader */
+    main{ display:flex; flex-direction:column; gap:12px; }
+    .reader{ max-width: var(--contentWidth); margin:0 auto; padding:18px; background:var(--card); border:1px solid var(--border); border-radius:16px; }
+    .reader p{ margin:0 0 1rem 0; text-align:left; }
+
+    .reader.r-dyslexia{ font-size:var(--fontSize); line-height:var(--lineHeight); letter-spacing:var(--letterSpacing); }
+
+    .seg{ border-radius:6px; padding:0 2px; }
+    .seg[aria-current="true"]{ background: color-mix(in oklab, var(--brand) 18%, transparent); }
+
+    .para{ display:block; }
+    .para[hidden]{ display:none; }
+
+    .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 auto; max-width:var(--contentWidth); }
+    .toolbar .row{ gap:6px; }
+
+    .statusbar{ max-width:var(--contentWidth); margin:0 auto; display:flex; gap:12px; justify-content:space-between; color:var(--muted); font-size:12px; }
+
+    .todo li{ display:flex; align-items:center; gap:8px; padding:6px 0; }
+    .todo li button{ padding:4px 8px; }
+
+    .pill{ padding:6px 10px; border-radius:999px; background:#fff; border:1px solid var(--border); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Inclusive Reader – Pink/White</h1>
+  <div class="hint" role="note">Alt+D Dyslexia • Alt+A ADHD • J/K or ←/→ paragraph • ↑/↓ sentence</div>
+</header>
+
+<div class="wrap" aria-label="App layout">
+  <aside class="controls card" aria-label="Controls">
+    <h2>Text</h2>
+    <div class="group">
+      <label for="source">Paste your text (TXT/Markdown)</label>
+      <textarea id="source" placeholder="Paste content here…"></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="example" class="pill">Example</button>
+        <button id="render" class="primary pill">Render</button>
+      </div>
+      <div class="muted">Tip: After rendering, use the toggles and shortcuts above.</div>
+    </div>
+
+    <h2>Modes</h2>
+    <div class="group">
+      <label class="row"><input type="checkbox" id="toggleDys" /> Dyslexia-friendly (readability)</label>
+      <label class="row"><input type="checkbox" id="toggleADHD" /> ADHD-friendly (focus)</label>
+    </div>
+
+    <h2>Typography</h2>
+    <div class="group">
+      <label>Font size <input type="range" id="fontSize" min="16" max="24" value="18" /></label>
+      <label>Line height <input type="range" id="lineHeight" min="14" max="22" value="16" /></label>
+      <label>Letter spacing <input type="range" id="letterSpacing" min="0" max="14" value="4" /></label>
+    </div>
+
+    <h2>Focus Tools</h2>
+    <div class="group">
+      <div class="row">
+        <button id="prevPara" class="pill" aria-label="Previous paragraph">Prev</button>
+        <button id="nextPara" class="pill" aria-label="Next paragraph">Next</button>
+      </div>
+      <div class="row" style="margin-top:8px;" aria-label="Pomodoro controls">
+        <button id="startFocus" class="pill">Focus 25</button>
+        <button id="startBreak" class="pill">Break 5</button>
+        <button id="pauseTimer" class="pill">Pause</button>
+        <span id="clock" class="muted" aria-live="polite">25:00</span>
+      </div>
+      <div style="margin-top:8px;">
+        <label for="newTask">Checklist</label>
+        <div class="row">
+          <input id="newTask" type="text" placeholder="e.g., Finish paras 1–3"/>
+          <button id="addTask" class="pill">Add</button>
+        </div>
+        <ul id="todo" class="todo" aria-label="Tasks"></ul>
+      </div>
+    </div>
+
+    <div class="muted">Preferences are saved locally (no server).</div>
+  </aside>
+
+  <main aria-label="Reading area">
+    <div class="toolbar">
+      <div class="row">
+        <button id="readSelected" class="pill">Read current para</button>
+        <button id="stopSpeech" class="pill">Stop</button>
+      </div>
+      <div class="row muted" id="help">Use keyboard to navigate and highlight.</div>
+    </div>
+
+    <article id="reader" class="reader" aria-label="Article">
+      <p class="muted">Paste your text on the left and click <em>Render</em>, or try the Example.</p>
+    </article>
+
+    <div class="statusbar">
+      <div>Paragraph: <span id="paraIndex">0</span>/<span id="paraTotal">0</span></div>
+      <div>Focus sessions: <span id="sessions">0</span></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+
+  const els = {
+    source: $('#source'), example: $('#example'), render: $('#render'),
+    dys: $('#toggleDys'), adhd: $('#toggleADHD'),
+    fontSize: $('#fontSize'), lineHeight: $('#lineHeight'), letterSpacing: $('#letterSpacing'),
+    reader: $('#reader'),
+    prevPara: $('#prevPara'), nextPara: $('#nextPara'), paraIndex: $('#paraIndex'), paraTotal: $('#paraTotal'),
+    readSelected: $('#readSelected'), stopSpeech: $('#stopSpeech'),
+    startFocus: $('#startFocus'), startBreak: $('#startBreak'), pauseTimer: $('#pauseTimer'), clock: $('#clock'), sessions: $('#sessions'),
+    newTask: $('#newTask'), addTask: $('#addTask'), todo: $('#todo'),
+  };
+
+  // Preferences
+  const LS = 'irfm_prefs_pink_v1';
+  let prefs = {
+    dyslexiaEnabled:false, adhdEnabled:false,
+    fontSize:18, lineHeight:1.6, letterSpacing:0.04,
+    currentParagraphIndex:0,
+    tasks:[], pomodoro:{focus:25, break:5, completedSessions:0}
+  };
+  try{ const saved = JSON.parse(localStorage.getItem(LS)||'null'); if(saved) prefs = Object.assign(prefs, saved); }catch{}
+  function save(){ localStorage.setItem(LS, JSON.stringify(prefs)); }
+
+  // Example text
+  const sample = `Reading is a path to knowledge, but we don't all read the same way.
+
+Dyslexia-friendly adjusts spacing and alignment to lower visual stress.
+
+ADHD-friendly limits what you see at once to make focus easier.
+
+Try both: toggle Dyslexia for readability, ADHD for focus.`;
+  els.example.addEventListener('click', ()=>{ els.source.value = sample; });
+
+  // Render
+  let paragraphs = []; // [{el, segIndex}]
+
+  function splitSentences(text){
+    const parts = text.split(/(?<=[。！？.!?])\s+/u).filter(Boolean);
+    return parts.length?parts:[text];
+  }
+
+  function render(){
+    const raw = els.source.value.trim();
+    if(!raw){ els.reader.innerHTML = `<p class="muted">Paste text or use the Example.</p>`; paragraphs=[]; updateCounters(); return; }
+    const paras = raw.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+    els.reader.innerHTML = '';
+    paragraphs = paras.map((p,idx)=>{
+      const sec = document.createElement('section');
+      sec.className = 'para'; sec.setAttribute('data-index', idx);
+      const ps = document.createElement('p');
+      const segs = splitSentences(p);
+      segs.forEach((seg,i)=>{
+        const span = document.createElement('span');
+        span.className='seg';
+        span.textContent = seg + (i<segs.length? ' ' : '');
+        span.setAttribute('tabindex','0');
+        ps.appendChild(span);
+      });
+      sec.appendChild(ps);
+      els.reader.appendChild(sec);
+      return { el: sec, segIndex: 0 };
+    });
+    prefs.currentParagraphIndex = Math.min(prefs.currentParagraphIndex, Math.max(0, paragraphs.length-1));
+    updateModes(); updateCounters(); focusSeg(); save();
+  }
+  els.render.addEventListener('click', render);
+
+  function paragraphIndex(){ return Math.max(0, Math.min(prefs.currentParagraphIndex||0, Math.max(0, paragraphs.length-1))); }
+  function updateCounters(){ els.paraTotal.textContent = String(paragraphs.length); els.paraIndex.textContent = String(paragraphIndex()+1); }
+
+  // Modes & styling
+  function applyStyles(){
+    document.documentElement.style.setProperty('--fontSize', prefs.fontSize+"px");
+    document.documentElement.style.setProperty('--lineHeight', prefs.lineHeight.toString());
+    document.documentElement.style.setProperty('--letterSpacing', prefs.letterSpacing+'em');
+  }
+  function updateModes(){
+    els.reader.classList.toggle('r-dyslexia', !!prefs.dyslexiaEnabled);
+    const idx = paragraphIndex();
+    paragraphs.forEach((p,i)=>{ p.el.hidden = !!prefs.adhdEnabled && i!==idx; p.el.setAttribute('aria-hidden', (!!prefs.adhdEnabled && i!==idx).toString()); });
+  }
+
+  // Sentence highlight
+  function segsOf(i){ const para = paragraphs[i]; return para ? $$('.seg', para.el) : []; }
+  function focusSeg(dir=0){
+    const idx = paragraphIndex();
+    const segs = segsOf(idx);
+    if(segs.length===0) return;
+    $$('.seg[aria-current="true"]').forEach(s=>s.removeAttribute('aria-current'));
+    const para = paragraphs[idx];
+    para.segIndex = Math.max(0, Math.min(para.segIndex + dir, segs.length-1));
+    const target = segs[para.segIndex];
+    if(target){ target.setAttribute('aria-current','true'); target.scrollIntoView({ block:'nearest', behavior:'smooth' }); target.focus({preventScroll:true}); }
+  }
+
+  // Shortcuts
+  document.addEventListener('keydown', (e)=>{
+    if(e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey){
+      if(e.key.toLowerCase()==='d'){ prefs.dyslexiaEnabled = !prefs.dyslexiaEnabled; els.dys.checked=prefs.dyslexiaEnabled; updateModes(); save(); e.preventDefault(); }
+      if(e.key.toLowerCase()==='a'){ prefs.adhdEnabled = !prefs.adhdEnabled; els.adhd.checked=prefs.adhdEnabled; updateModes(); save(); e.preventDefault(); }
+    }
+    if(['j','ArrowRight'].includes(e.key)){ nextPara(); }
+    if(['k','ArrowLeft'].includes(e.key)){ prevPara(); }
+    if(e.key==='ArrowUp'){ focusSeg(-1); }
+    if(e.key==='ArrowDown'){ focusSeg(+1); }
+  });
+
+  function nextPara(){ if(paragraphs.length===0) return; prefs.currentParagraphIndex = Math.min(paragraphIndex()+1, paragraphs.length-1); updateModes(); updateCounters(); focusSeg(0); save(); }
+  function prevPara(){ if(paragraphs.length===0) return; prefs.currentParagraphIndex = Math.max(paragraphIndex()-1, 0); updateModes(); updateCounters(); focusSeg(0); save(); }
+  els.nextPara.addEventListener('click', nextPara);
+  els.prevPara.addEventListener('click', prevPara);
+
+  // Toggles + sliders
+  els.dys.checked = !!prefs.dyslexiaEnabled; els.adhd.checked = !!prefs.adhdEnabled;
+  els.dys.addEventListener('change', ()=>{ prefs.dyslexiaEnabled = els.dys.checked; updateModes(); save(); });
+  els.adhd.addEventListener('change', ()=>{ prefs.adhdEnabled = els.adhd.checked; updateModes(); save(); });
+
+  els.fontSize.value = prefs.fontSize; els.lineHeight.value = Math.round(prefs.lineHeight*10); els.letterSpacing.value = Math.round(prefs.letterSpacing*100);
+  function syncSliders(){
+    prefs.fontSize = parseInt(els.fontSize.value,10);
+    prefs.lineHeight = parseInt(els.lineHeight.value,10)/10;   // 1.4–2.2
+    prefs.letterSpacing = parseInt(els.letterSpacing.value,10)/100; // 0–0.14
+    applyStyles(); save();
+  }
+  ['input','change'].forEach(ev=>{
+    els.fontSize.addEventListener(ev, syncSliders);
+    els.lineHeight.addEventListener(ev, syncSliders);
+    els.letterSpacing.addEventListener(ev, syncSliders);
+  });
+  applyStyles();
+
+  // Speech synthesis
+  function currentParaText(){ const idx = paragraphIndex(); const sec = paragraphs[idx]?.el; return sec ? sec.innerText : ''; }
+  let utterance = null;
+  els.readSelected.addEventListener('click', ()=>{
+    const t = currentParaText();
+    if(!('speechSynthesis' in window)) { alert('Speech not supported in this browser'); return; }
+    if(utterance){ window.speechSynthesis.cancel(); }
+    utterance = new SpeechSynthesisUtterance(t);
+    utterance.rate = 1.0; utterance.pitch = 1.0;
+    window.speechSynthesis.speak(utterance);
+  });
+  els.stopSpeech.addEventListener('click', ()=>{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); });
+
+  // Pomodoro
+  let timer = null, left = prefs.pomodoro.focus*60, mode='focus';
+  function fmt(s){ const m=Math.floor(s/60), n=s%60; return String(m).padStart(2,'0')+":"+String(n).padStart(2,'0'); }
+  function renderClock(){ els.clock.textContent = fmt(left); }
+  function ring(){ alert("Time's up!"); }
+  function start(len){ clearInterval(timer); left=len*60; renderClock(); timer = setInterval(()=>{ if(left>0){ left--; renderClock(); } else { clearInterval(timer); timer=null; ring(); if(mode==='focus'){ prefs.pomodoro.completedSessions++; els.sessions.textContent = prefs.pomodoro.completedSessions; save(); } } },1000); }
+  els.startFocus.addEventListener('click', ()=>{ mode='focus'; start(prefs.pomodoro.focus); });
+  els.startBreak.addEventListener('click', ()=>{ mode='break'; start(prefs.pomodoro.break); });
+  els.pauseTimer.addEventListener('click', ()=>{ clearInterval(timer); timer=null; });
+  els.sessions.textContent = prefs.pomodoro.completedSessions; renderClock();
+
+  // Checklist
+  function drawTasks(){ els.todo.innerHTML=''; prefs.tasks.forEach((t,i)=>{
+    const li=document.createElement('li');
+    const c=document.createElement('input'); c.type='checkbox'; c.checked=!!t.done; c.addEventListener('change', ()=>{ t.done=c.checked; save(); drawTasks(); });
+    const span=document.createElement('span'); span.textContent=t.text; if(t.done) span.style.textDecoration='line-through';
+    const del=document.createElement('button'); del.textContent='Delete'; del.className='pill'; del.addEventListener('click', ()=>{ prefs.tasks.splice(i,1); save(); drawTasks(); });
+    li.append(c, span, del); els.todo.appendChild(li);
+  }); }
+  els.addTask.addEventListener('click', ()=>{ const v=els.newTask.value.trim(); if(!v) return; prefs.tasks.push({text:v,done:false}); els.newTask.value=''; save(); drawTasks(); });
+  els.newTask.addEventListener('keydown', e=>{ if(e.key==='Enter'){ els.addTask.click(); }});
+  drawTasks();
+
+})();
+</script>
+</body>
+</html>
+
