@@ -230,7 +230,7 @@ Try both: toggle Dyslexia for readability, ADHD for focus.`;
       segs.forEach((seg,i)=>{
         const span = document.createElement('span');
         span.className='seg';
-        span.textContent = seg + (i<segs.length? ' ' : '');
+        span.textContent = seg + (i<segs.length-1 ? ' ' : '');
         span.setAttribute('tabindex','0');
         ps.appendChild(span);
       });
@@ -244,7 +244,10 @@ Try both: toggle Dyslexia for readability, ADHD for focus.`;
   els.render.addEventListener('click', render);
 
   function paragraphIndex(){ return Math.max(0, Math.min(prefs.currentParagraphIndex||0, Math.max(0, paragraphs.length-1))); }
-  function updateCounters(){ els.paraTotal.textContent = String(paragraphs.length); els.paraIndex.textContent = String(paragraphIndex()+1); }
+  function updateCounters(){ 
+    els.paraTotal.textContent = String(paragraphs.length);
+  const idx = paragraphs.length ? (paragraphIndex()+1) : 0;
+  els.paraIndex.textContent = String(idx); }
 
   // Modes & styling
   function applyStyles(){
